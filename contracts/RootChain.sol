@@ -105,6 +105,24 @@ contract RootChain {
      * Public Functions
      */
 
+    // @dev Allows anyone to add new token to Plasma chain
+    // @param token The address of the ERC20 token
+    function addToken(address token)
+        public
+    {
+        require(exitsQueues[token] == address(0));
+        exitsQueues[token] = address(new PriorityQueue());
+        TokenAdded(token);
+    }
+
+    function hasToken(address token)
+        view
+        public
+        returns (bool)
+    {
+        return exitsQueues[token] != address(0);
+    }
+
     /**
      * @dev Allows Plasma chain operator to submit block root.
      * @param _root The root of a child chain block.
@@ -259,7 +277,7 @@ contract RootChain {
         while (exitable_at < block.timestamp) {
             currentExit = exits[utxoPos];
 
-            // FIXME: handle ERC-20 transfer
+            // FIXME: handle ERC20 transfer
             require(address(0) == _token);
 
             currentExit.owner.transfer(currentExit.amount);

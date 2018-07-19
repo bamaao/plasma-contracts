@@ -49,7 +49,13 @@ def root_chain(ethtester, get_contract):
     ethtester.chain.mine()
     return contract
 
+@pytest.fixture
+def token(ethtester, get_contract):
+    contract = get_contract('MintableToken')
+    ethtester.chain.mine()
+    return contract
 
 @pytest.fixture
 def testlang(root_chain, ethtester):
     return TestingLanguage(root_chain, ethtester)
+

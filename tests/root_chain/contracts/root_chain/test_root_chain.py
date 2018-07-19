@@ -5,6 +5,28 @@ from plasma_core.utils.address import address_to_bytes
 from plasma_core.utils.utils import get_deposit_hash
 from plasma_core.constants import NULL_ADDRESS, NULL_ADDRESS_HEX, WEEK
 
+# adding fake token
+def test_add_token(ethtester, root_chain):
+    fake_token, value_1 = ethtester.a0, 100
+    assert not root_chain.hasToken(fake_token)
+    root_chain.addToken(fake_token)
+    assert root_chain.hasToken(fake_token)
+    with pytest.raises(TransactionFailed):
+        root_chain.addToken(fake_token)
+
+# token deployment (FIXME move elsewhere)
+def test_token_deployment(ethtester, root_chain, get_contract):
+    contract = get_contract('MintableToken')
+    ethtester.chain.mine()
+    owner, value_1 = ethtester.a0, 100
+    contract.mint(owner, 100)
+    assert 100 == contract.balanceOf(owner)
+
+# add real token
+def test_token_adding(ethtester, token, root_chain):
+    assert not root_chain.hasToken(token.address)
+    root_chain.addToken(token.address)
+    assert root_chain.hasToken(token.address)
 
 # deposit
 def test_deposit_should_succeed(testlang):

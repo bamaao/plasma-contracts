@@ -7,6 +7,8 @@ import "./Merkle.sol";
 import "./Validate.sol";
 import "./PriorityQueue.sol";
 
+import "./ERC20.sol";
+
 
 /**
  * @title RootChain
@@ -107,20 +109,20 @@ contract RootChain {
 
     // @dev Allows anyone to add new token to Plasma chain
     // @param token The address of the ERC20 token
-    function addToken(address token)
+    function addToken(address _token)
         public
     {
-        require(exitsQueues[token] == address(0));
-        exitsQueues[token] = address(new PriorityQueue());
-        TokenAdded(token);
+        require(exitsQueues[_token] == address(0));
+        exitsQueues[_token] = address(new PriorityQueue());
+        TokenAdded(_token);
     }
 
-    function hasToken(address token)
+    function hasToken(address _token)
         view
         public
         returns (bool)
     {
-        return exitsQueues[token] != address(0);
+        return exitsQueues[_token] != address(0);
     }
 
     /**
@@ -153,7 +155,28 @@ contract RootChain {
         // Only allow up to CHILD_BLOCK_INTERVAL deposits per child block.
         require(currentDepositBlock < CHILD_BLOCK_INTERVAL);
 
-        bytes32 root = keccak256(msg.sender, address(0), msg.value);
+        emitDepositBlock(msg.sender, address(0), msg.value);
+    }
+
+
+    /**
+     * @dev Deposits approved amount of ERC20 token. Approve must be called first.
+     */
+    function depositFrom(address _token, address _owner, uint256 _amount)
+        public
+    {
+        // Only allow up to CHILD_BLOCK_INTERVAL deposits per child block.
+        require(currentDepositBlock < CHILD_BLOCK_INTERVAL);
+
+        // Warning, check your ERC20 implementation. TransferFrom should return bool
+        require(ERC20(_token).transferFrom(_owner, address(this), _amount));
+        emitDepositBlock(_owner, _token, _amount);
+    }
+
+    function emitDepositBlock(address _owner, address _token, uint256 _amount)
+        private
+    {
+        bytes32 root = keccak256(_owner, _token, _amount);
         uint256 depositBlock = getDepositBlock();
         childChain[depositBlock] = ChildBlock({
             root: root,
@@ -161,7 +184,7 @@ contract RootChain {
         });
         currentDepositBlock = currentDepositBlock.add(1);
 
-        emit Deposit(msg.sender, depositBlock, address(0), msg.value);
+        emit Deposit(_owner, depositBlock, _token, _amount);
     }
 
     /**

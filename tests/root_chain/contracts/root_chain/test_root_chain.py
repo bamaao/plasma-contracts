@@ -39,6 +39,15 @@ def test_deposit_should_succeed(testlang):
     assert plasma_block.timestamp == testlang.timestamp
     assert testlang.root_chain.currentDepositBlock() == 2
 
+def test_deposit_token(testlang, ethtester, root_chain, token):
+    owner, value_1 = testlang.accounts[0], 1000
+    token.mint(owner.address, value_1)
+    ethtester.chain.mine()
+    assert value_1 == token.balanceOf(owner.address)
+    token.approve(root_chain.address, value_1, sender=owner.key)
+    ethtester.chain.mine()
+    root_chain.depositFrom(token.address, owner.address, value_1, sender=owner.key)
+    assert value_1 == token.balanceOf(root_chain.address)
 
 # startDepositExit
 def test_start_deposit_exit_should_succeed(testlang):
